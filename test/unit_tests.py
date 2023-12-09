@@ -1,11 +1,13 @@
 import copy
-import matplotlib.pyplot as plt
-from graph_transformer import *
 import numpy as np
 import unittest
 import random
+import sys
+sys.path.insert(0, '../')
+from graph_transformer import *
 random.seed(82729)
 np.random.seed(38739)
+
 
 # Gaussian elimination on W-matrix
 def gauss_elim(m):
@@ -32,6 +34,7 @@ def gauss_elim(m):
         lead = lead + 1
     return m
 
+
 # bring W-matrix in canonical form after Gaussian elimination has been applied
 def get_canonical(m):
     nr, nc = m.shape
@@ -49,6 +52,7 @@ def get_canonical(m):
                 m[r, :] = np.logical_xor(m[r, :], m[first_one[c], :])
     return m
 
+
 # change W-matrix with Q, H, R gate
 def update_w_matrix(w_matrix, gate, n, num_nodes):
     if gate == 'Q':
@@ -59,6 +63,7 @@ def update_w_matrix(w_matrix, gate, n, num_nodes):
         w_matrix[:, n + num_nodes] = h
     elif gate == 'R':
         w_matrix[:, n + num_nodes] = np.logical_xor(w_matrix[:, n], w_matrix[:, n + num_nodes])
+
 
 # get W-matrix representing the stabilizers
 def get_w_matrix(g):
@@ -72,6 +77,7 @@ def get_w_matrix(g):
             update_w_matrix(w_matrix, g.nodes[node]['LC'][0], n, g.number_of_nodes())
     return w_matrix
 
+
 # returns True if same edges (networkx puts the node added first to the beginning, so (0,1) or (1,0) is both possible)
 def identical_edges(set1, set2):
     for e in set1.difference(set2):
@@ -81,6 +87,7 @@ def identical_edges(set1, set2):
         if not (e[1], e[0]) in set1:
             return False
     return True
+
 
 # check local equivalence (can fail to recognize equivalence due to limited depth (depth=#qubits to explore full orbit))
 def check_equivalence(g1, g2, depth=5):
@@ -95,6 +102,7 @@ def check_equivalence(g1, g2, depth=5):
         if same:
             return True
     return False
+
 
 class TestFusionRules(unittest.TestCase):
     def single_qbt_test(self):
@@ -120,7 +128,7 @@ class TestFusionRules(unittest.TestCase):
             self.assertTrue(identical_edges(set(gr.edges), set(gr2.edges)))  # the two implementations are equivalent
             self.assertTrue((get_canonical(gauss_elim(get_w_matrix(gr))) == get_canonical(gauss_elim(get_w_matrix(gr2)))).all())
 
-        # test X-measurement. Different (random) special neighbor yields same stabilizer state (locally equivalent graph, H gate applied on different qubit)
+        # Different special neighbor gives same stabilizer state (locally equivalent, H on different qubit)
         for _ in range(20):
             gr = nx.gnp_random_graph(7, 0.5)
             nx.set_node_attributes(gr, '', 'LC')  # store local Clifford (LC) gates as node attribute
@@ -128,7 +136,7 @@ class TestFusionRules(unittest.TestCase):
             n1 = list(gr.nodes)[0]
             measure_x(gr, n1, rnd=True)  # pick special neighbor randomly
             measure_x_alternative(gr2, n1, rnd=True)  # pick special neighbor randomly
-            self.assertTrue(check_equivalence(gr, gr2))  # graphs are locally equivalent but not identical when special neighbor is chosen differently
+            self.assertTrue(check_equivalence(gr, gr2))  # locally equivalent but not identical when special neighbor differs
             self.assertTrue((get_canonical(gauss_elim(get_w_matrix(gr))) == get_canonical(gauss_elim(get_w_matrix(gr2)))).all())
 
         # test many single-qubit measurements
@@ -288,4 +296,3 @@ if __name__ == '__main__':
     t.xxzz_test()
     t.yzzy_test()
     t.consistency_test()
-    unittest.main()

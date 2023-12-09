@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 import random
 from functools import reduce
 
+
 # get node from list (random or deterministic for special neighbor choice)
 def get_list_element(l_input, rnd=False):
     if rnd:
         return random.choice(l_input)
     else:
         return max(l_input)
+
 
 # exemplary graph: two-dimensional square lattice with diagonals
 def get_bcc_2d_lattice(l_x, l_y):
@@ -30,6 +32,7 @@ def get_bcc_2d_lattice(l_x, l_y):
     nx.set_node_attributes(g, '', 'LC')  # store local Clifford (LC) gates as node attribute
     return g
 
+
 # exemplary graph: two linear chains
 def get_double_chain(len_chain):
     g = nx.Graph()
@@ -41,6 +44,7 @@ def get_double_chain(len_chain):
         g.add_edge(x+len_chain, x+len_chain + 1)
     nx.set_node_attributes(g, '', 'LC')  # store local Clifford (LC) gates as node attribute
     return g
+
 
 # transform Pauli matrix measurement pattern (instead of the Clifford gates on the graph state)
 def transform_pauli_measurement_pattern(g, node, pauli):
@@ -82,6 +86,7 @@ def transform_pauli_measurement_pattern(g, node, pauli):
         elif pauli == 'Z':
             return 'Y'
 
+
 # transform measured parity pattern (instead of the Clifford gates on the graph state) ('XZZX' means X_1Z_2 and Z_1X_2)
 def transform_parity_measurement_pattern(g, node1, node2, parity):
     l_parity = list(parity)
@@ -103,6 +108,7 @@ def transform_parity_measurement_pattern(g, node1, node2, parity):
     elif new_parity in {'YXZY', 'ZYYX', 'YXXZ', 'XZZY', 'ZYXZ', 'XZYX'}:
         return 'YXZY'
 
+
 # update local Clifford (LC) gate at node (up to signs, Q,H,R have the effect of sqrt(X,Y,Z) on the Pauli group)
 def update_lc(g, node, gate):
     if g.nodes[node]['LC'] == '':
@@ -121,11 +127,13 @@ def update_lc(g, node, gate):
             elif 'R' not in g.nodes[node]['LC']:
                 g.nodes[node]['LC'] = 'R'
 
+
 # replace old neighborhood of node n by neighbors in set nb_new
 def replace_neigborhood(g, n, nb_new):
     g.remove_edges_from([(n, nb) for nb in g.neighbors(n)])
     for nb in nb_new:
         g.add_edge(n, nb)
+
 
 # local complementatation (to implement single-qubit measurements or single-qubit gates)
 def local_compl(g, node):
@@ -134,14 +142,17 @@ def local_compl(g, node):
     g.remove_edges_from(g_sub.edges())
     g.add_edges_from(g_sub_c.edges())
 
+
 def measure_z(g, node):
     g.remove_node(node)
+
 
 def measure_y(g, node):
     local_compl(g, node)
     for nb in g.neighbors(node):
         update_lc(g, nb, 'R')  # see eq. 100 in Hein2006
     g.remove_node(node)
+
 
 def measure_y_alternative(g, node):
     nb_node = set([nb for nb in g.neighbors(node)])
@@ -152,6 +163,7 @@ def measure_y_alternative(g, node):
     for n in nb_node:
         replace_neigborhood(g, n, nb_n[n].symmetric_difference(nb_node.difference([n])))
         update_lc(g, n, 'R')
+
 
 def measure_x(g, node, sp=-1, rnd=False):
     if g.degree[node] == 0:
@@ -164,6 +176,7 @@ def measure_x(g, node, sp=-1, rnd=False):
     g.remove_node(node)
     local_compl(g, sp)
     update_lc(g, sp, 'H')  # see eq. 101 in Hein2006
+
 
 def measure_x_alternative(g, node, sp=-1, rnd=False):
     nb_node = set([nb for nb in g.neighbors(node)])
@@ -184,6 +197,7 @@ def measure_x_alternative(g, node, sp=-1, rnd=False):
     for n in nb_n[sp]:
         if n not in nb_node:
             replace_neigborhood(g, n, nb_n[n].symmetric_difference(nb_node))
+
 
 def transform_xzzx(g_in, qbt_a, qbt_b, a_sp=-1, b_sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
@@ -344,6 +358,7 @@ def transform_xzzx(g_in, qbt_a, qbt_b, a_sp=-1, b_sp=-1):
         else:
             print("error 2")
 
+
 # XXZZ is identical (independent of whether there is a connection between A, B)
 def transform_xxzz(g_in, qbt_a, qbt_b, sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)]).difference([qbt_b])  # subtract other fusion qubit by default
@@ -367,6 +382,7 @@ def transform_xxzz(g_in, qbt_a, qbt_b, sp=-1):
     for n in nb_n[sp]:
         if n not in sym_diff_nb_a_nb_b:
             replace_neigborhood(g_in, n, reduce(lambda a, b: a.symmetric_difference(b), [nb_n[n], nb_a, nb_b]))
+
 
 def transform_yzzy(g_in, qbt_a, qbt_b, sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
@@ -426,6 +442,7 @@ def transform_yzzy(g_in, qbt_a, qbt_b, sp=-1):
                 replace_neigborhood(g_in, n, nb_n[n].symmetric_difference(nb_b.difference([n])))
                 update_lc(g_in, n, 'R')
 
+
 # XYYX is identical (independent of whether there is a connection between A, B)
 def transform_xyyx(g_in, qbt_a, qbt_b):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)]).difference([qbt_b])  # subtract other fusion qubit by default
@@ -439,6 +456,7 @@ def transform_xyyx(g_in, qbt_a, qbt_b):
     for n in sym_diff_nb_a_nb_b:
         replace_neigborhood(g_in, n, reduce(lambda a, b: a.symmetric_difference(b), [nb_n[n], nb_a.difference([n]), nb_b.difference([n])]))
         update_lc(g_in, n, 'R')
+
 
 def transform_xyyz(g_in, qbt_a, qbt_b, sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
@@ -515,6 +533,7 @@ def transform_xyyz(g_in, qbt_a, qbt_b, sp=-1):
                 replace_neigborhood(g_in, n, nb_n[n].symmetric_difference(nb_a.difference([n])))
                 update_lc(g_in, n, 'R')
 
+
 # g: graph, node: measured qubit, pauli: measured Pauli operator (transform if Clifford gate is applied before)
 def measure_single(g, node, pauli, method=0, sp=-1, rnd=False):
     pauli_new = transform_pauli_measurement_pattern(g, node, pauli)
@@ -531,6 +550,7 @@ def measure_single(g, node, pauli, method=0, sp=-1, rnd=False):
     else:
         measure_z(g, node)
 
+
 # (fusion success) g: graph, node1, node2: measured qubits, parity: measured double-parity (transform if Clifford gate is applied before)
 def measure_double_parity(g, node1, node2, parity):
     parity_new = transform_parity_measurement_pattern(g, node1, node2, parity)
@@ -546,6 +566,7 @@ def measure_double_parity(g, node1, node2, parity):
         transform_xyyz(g, node1, node2)
     elif parity_new == 'YXZY':
         transform_xyyz(g, node2, node1)
+
 
 if __name__ == '__main__':
     gr = get_double_chain(5)

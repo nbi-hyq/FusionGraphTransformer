@@ -1,0 +1,22 @@
+name: CI
+on:
+  - push
+  - pull_request
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Dependencies2 (shared)
+        run: pip install numpy matplotlib networkx
+      - name: python-test main_unittests
+        working-directory: ./test
+        run: python unit_tests.py
+        shell: bash

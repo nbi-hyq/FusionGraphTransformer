@@ -551,9 +551,48 @@ def measure_single(g, node, pauli, method=0, sp=-1, rnd=False):
         measure_z(g, node)
 
 
+# multiply two commuting parities to get third parity
+def multiply_parities(double_parity):
+    p = ''
+    for i in range(2):
+        if (double_parity[0+i] == 'X' and double_parity[2+i] == 'Y') or (double_parity[0+i] == 'Y' and double_parity[2+i] == 'X'):
+            p += 'Z'
+        elif (double_parity[0+i] == 'X' and double_parity[2+i] == 'Z') or (double_parity[0+i] == 'Z' and double_parity[2+i] == 'X'):
+            p += 'Y'
+        else:
+            p += 'X'
+    return p
+
+
+# check if the fusion could be deterministic by checking if a measured parity is a stabilizer of the input state g,
+# assuming that g is a graph state (if False, the fusion succeeds with p_s=0.5)
+# new_parity: measured parities, rotated if single-qubit Clifford gates are applied to g
+def check_deterministic(g, node1, node2, new_parity):
+    nb_1 = set([nb for nb in g.neighbors(node1)])
+    nb_2 = set([nb for nb in g.neighbors(node2)])
+    if nb_1 == nb_2:  # shared neighborhood for unconnected fusion qubits
+        if new_parity[0:2] == 'XX' or new_parity[2:4] == 'XX' or multiply_parities(new_parity) == 'XX':
+            return True
+    elif nb_1.difference([node2]) == nb_2.difference([node1]):  # shared neighborhood for connected qubits
+        if new_parity[0:2] == 'YY' or new_parity[2:4] == 'YY' or multiply_parities(new_parity) == 'YY':
+            return True
+    if nb_1 == set([node2]):  # node 1 not connected to anything except node 2
+        if new_parity[0:2] == 'XZ' or new_parity[2:4] == 'XZ' or multiply_parities(new_parity) == 'XZ':
+            return True
+    if nb_2 == set([node1]):  # node 2 not connected to anything except node 1
+        if new_parity[0:2] == 'ZX' or new_parity[2:4] == 'ZX' or multiply_parities(new_parity) == 'ZX':
+            return True
+    return False
+
+
 # (fusion success) g: graph, node1, node2: measured qubits, parity: measured double-parity (transform if Clifford gate is applied before)
-def measure_double_parity(g, node1, node2, parity):
+def measure_double_parity(g, node1, node2, parity, deterministic_check=True):
     parity_new = transform_parity_measurement_pattern(g, node1, node2, parity)
+    deterministic_possible = False
+    if deterministic_check:
+        deterministic_possible = check_deterministic(g, node1, node2, parity_new)
+        if deterministic_possible:
+            print('potentially deterministic fusion')
     if parity_new == 'XZZX':
         transform_xzzx(g, node1, node2)
     elif parity_new == 'XXZZ':
@@ -566,6 +605,7 @@ def measure_double_parity(g, node1, node2, parity):
         transform_xyyz(g, node1, node2)
     elif parity_new == 'YXZY':
         transform_xyyz(g, node2, node1)
+    return deterministic_possible
 
 
 if __name__ == '__main__':

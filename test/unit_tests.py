@@ -267,6 +267,44 @@ class TestFusionRules(unittest.TestCase):
                 self.assertTrue(check_equivalence(gr, gr2))  # edges can differ as 2nd measurement can change to X
                 self.assertTrue((get_canonical(gauss_elim(get_w_matrix(gr))) == get_canonical(gauss_elim(get_w_matrix(gr2)))).all())
 
+    def deterministic_test(self):
+        gr = nx.Graph()
+        gr.add_nodes_from([0, 1, 2, 3])
+        gr.add_edge(0, 1)
+        gr.add_edge(1, 2)
+        gr.add_edge(1, 3)
+        nx.set_node_attributes(gr, '', 'LC')
+        gr2 = copy.deepcopy(gr)
+        gr3 = copy.deepcopy(gr)
+        self.assertTrue(measure_double_parity(gr, 0, 1, 'XZZX'))
+        self.assertTrue(measure_double_parity(gr2, 0, 1, 'YYZX'))
+        self.assertFalse(measure_double_parity(gr3, 0, 1, 'XXZZ'))
+
+        # shared neighborhood (unconnected fusion qubits)
+        gr = nx.Graph()
+        gr.add_nodes_from([0, 1, 2, 3])
+        gr.add_edge(0, 2)
+        gr.add_edge(0, 3)
+        gr.add_edge(1, 2)
+        gr.add_edge(1, 3)
+        nx.set_node_attributes(gr, '', 'LC')
+        gr2 = copy.deepcopy(gr)
+        self.assertTrue(measure_double_parity(gr, 0, 1, 'XXZZ'))
+        self.assertFalse(measure_double_parity(gr2, 0, 1, 'ZZYX'))
+
+        # shared neighborhood (connected fusion qubits)
+        gr = nx.Graph()
+        gr.add_nodes_from([0, 1, 2, 3])
+        gr.add_edge(0, 1)
+        gr.add_edge(0, 2)
+        gr.add_edge(0, 3)
+        gr.add_edge(1, 2)
+        gr.add_edge(1, 3)
+        nx.set_node_attributes(gr, '', 'LC')
+        gr2 = copy.deepcopy(gr)
+        self.assertTrue(measure_double_parity(gr, 0, 1, 'YYXZ'))
+        self.assertFalse(measure_double_parity(gr2, 0, 1, 'XXYZ'))
+
     # consistency check by different order of the fusion
     def consistency_test(self):
         l_size = [6, 7, 8, 9, 10]
@@ -296,3 +334,4 @@ if __name__ == '__main__':
     t.xxzz_test()
     t.yzzy_test()
     t.consistency_test()
+    t.deterministic_test()

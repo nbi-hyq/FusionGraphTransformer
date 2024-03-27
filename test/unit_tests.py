@@ -89,7 +89,8 @@ def identical_edges(set1, set2):
     return True
 
 
-# check local equivalence (can fail to recognize equivalence due to limited depth (depth=#qubits to explore full orbit))
+# check local equivalence, isomorphic graphs are treated as different (only for tests!):
+# slow&silly implementation, can fail to see equivalence if depth < orbit diameter, return False case: runing time scales as exp(depth)
 def check_equivalence(g1, g2, depth=5):
     for n1 in g1.nodes:
         g1_cp = copy.deepcopy(g1)
@@ -105,6 +106,32 @@ def check_equivalence(g1, g2, depth=5):
 
 
 class TestFusionRules(unittest.TestCase):
+    def check_equivalence_test(self):
+        g1 = nx.Graph()
+        g1.add_nodes_from([i for i in range(8)])
+        g1.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (0, 5), (0, 6), (3, 7)])
+        g2 = nx.Graph()
+        g2.add_nodes_from([i for i in range(8)])
+        g2.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 0)])
+        self.assertFalse(check_equivalence(g1, g2, depth=4))
+
+        g1 = nx.Graph()
+        g1.add_nodes_from([i for i in range(4)])
+        g1.add_edges_from([(0, 1), (0, 2), (0, 3)])
+        g2 = nx.Graph()
+        g2.add_nodes_from([i for i in range(4)])
+        g2.add_edges_from([(0, 1), (1, 2), (1, 3)])
+        g3 = nx.Graph()
+        g3.add_nodes_from([i for i in range(4)])
+        g3.add_edges_from([(0, 2), (2, 1), (1, 3), (3, 0)])
+        g4 = nx.Graph()
+        g4.add_nodes_from([i for i in range(4)])
+        g4.add_edges_from([(0, 1), (1, 2), (2, 3)])
+        self.assertTrue(check_equivalence(g1, g2, depth=4))
+        self.assertFalse(check_equivalence(g1, g3, depth=4))
+        self.assertFalse(check_equivalence(g2, g3, depth=4))
+        self.assertTrue(check_equivalence(g3, g4, depth=4))
+
     def single_qbt_test(self):
         # test Y-measurement
         for _ in range(20):
@@ -335,3 +362,4 @@ if __name__ == '__main__':
     t.yzzy_test()
     t.consistency_test()
     t.deterministic_test()
+    t.check_equivalence_test()

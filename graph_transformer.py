@@ -47,6 +47,7 @@ def get_double_chain(len_chain):
 
 
 # transform Pauli matrix measurement pattern (instead of the Clifford gates on the graph state)
+# see https://arxiv.org/pdf/2405.02414 Table A2 for what letter is which Clifford gate
 def transform_pauli_measurement_pattern(g, node, pauli):
     if g.nodes[node]['LC'] == '':
         return pauli
@@ -205,7 +206,7 @@ def measure_x_alternative(g, node, sp=-1, rnd=False):
 
 # XZZX-fusion
 # g_in: networx graph, qbt_a, qbt_b: graph nodes which are measured by the fusion
-# a_sp, b_sp: special neighbor qubits (there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
+# a_sp, b_sp: special neighbor qubits (if a_sp, b_sp are connected, there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
 def transform_xzzx(g_in, qbt_a, qbt_b, a_sp=-1, b_sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
     connected = (qbt_b in nb_a)  # connected fusion qubits or not
@@ -395,7 +396,7 @@ def transform_xxzz(g_in, qbt_a, qbt_b, sp=-1):
 
 # YZZY-fusion
 # g_in: networx graph, qbt_a, qbt_b: graph nodes which are measured by the fusion
-# sp: special neighbor qubit (there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
+# sp: special neighbor qubit (if qbt_a, qbt_b are unconnected, there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
 def transform_yzzy(g_in, qbt_a, qbt_b, sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
     connected = (qbt_b in nb_a)  # connected fusion qubits or not
@@ -460,7 +461,7 @@ def transform_yzzy(g_in, qbt_a, qbt_b, sp=-1):
 def transform_xyyx(g_in, qbt_a, qbt_b):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)]).difference([qbt_b])  # subtract other fusion qubit by default
     nb_b = set([nb for nb in g_in.neighbors(qbt_b)]).difference([qbt_a])  # subtract other fusion qubit by default
-    sym_diff_nb_a_nb_b = nb_a.symmetric_difference(nb_b)  # The neighbours that only belong to A \Delta B (need for choosing special neighbor)
+    sym_diff_nb_a_nb_b = nb_a.symmetric_difference(nb_b)  # The neighbours that only belong to A \Delta B
     g_in.remove_node(qbt_a)  # remove the fusion qubits after neighborhood is determined
     g_in.remove_node(qbt_b)  # remove the fusion qubits after neighborhood is determined
     nb_n = {}  # dictionary storing original neighborhood of all potentially affected nodes
@@ -473,7 +474,7 @@ def transform_xyyx(g_in, qbt_a, qbt_b):
 
 # XYYZ-fusion
 # g_in: networx graph, qbt_a, qbt_b: graph nodes which are measured by the fusion
-# sp: special neighbor qubit (there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
+# sp: special neighbor qubit (qbt_a, qbt_b are connected, there is a freedom of choice like for the x-measurement in https://arxiv.org/abs/quant-ph/0602096).
 def transform_xyyz(g_in, qbt_a, qbt_b, sp=-1):
     nb_a = set([nb for nb in g_in.neighbors(qbt_a)])
     connected = (qbt_b in nb_a)  # connected fusion qubits or not

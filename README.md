@@ -1,6 +1,6 @@
 # FusionGraphTransformer
 
-This is a ```Python```-implementation for simulating the effect of linear-optics fusions (Bell state measurements) on graph states. Upon success, the considered type-II fusions represent a simultaneous measurement of two weight-two operators from the Pauli group. A detailed explanation for what this source code can be used is given in https://arxiv.org/abs/2405.02414.
+This is a ```Python``` implementation for simulating the effect of linear-optics fusions (Bell state measurements) on graph states. Upon success, the considered type-II fusions represent a simultaneous measurement of two weight-two operators from the Pauli group. A detailed explanation of what this source code can be used for is given at https://arxiv.org/abs/2405.02414.
 
 see also:
 - more information on graph states: https://arxiv.org/abs/quant-ph/0602096
